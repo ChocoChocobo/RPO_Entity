@@ -1,7 +1,8 @@
-п»їusing Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Timers;
+using System.Xml.Linq;
 
 namespace RPO_Entity
 {
@@ -32,7 +33,16 @@ namespace RPO_Entity
         public void PrintInfo()
         {
             List<User>? users = Users.ToList();
-            Console.WriteLine("РЎРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ Р РџРћ:");
+            Console.WriteLine("Список пользователей РПО:");
+            foreach (User user in users)
+            {
+                Console.WriteLine($"{user.Id}. {user.Name}, {user.Age}");
+            }
+        }
+
+        public void PrintUserList(List<User> users)
+        {
+            Console.WriteLine("Конкретный список пользователей: ");
             foreach (User user in users)
             {
                 Console.WriteLine($"{user.Id}. {user.Name}, {user.Age}");
@@ -58,10 +68,43 @@ namespace RPO_Entity
         {
             return Users.ToList();
         }
+        
+        public bool TryGetUsersByName(string name, out List<User> outUsers)
+        {
+            // Where принимает лямбда-функцию, которая работает с объектом класса и проверяет что-либо в соответствии с условием
+            var users = Users.Where(user => user.Name != null && user.Name.Contains(name)).ToList(); // в объект users заносим все подходящие значения из БД в соответствии с условием.
+            if (users.Count == 0) // Если значений в зависимости от условия нет, то просто инициализируем список без значений и возвращаем false
+            {
+                Console.WriteLine("Пользователей с таким именем нет в БД!");
+                outUsers = new List<User>();
+                return false;
+            }
+            else
+            {
+                Console.WriteLine("Пользователи с таким именем есть в БД!");
+                outUsers = users;
+                return true;
+            }
+        }
 
-        //          РџСЂР°РєС‚РёРєР°
-        //  Р РµР°Р»РёР·РѕРІР°С‚СЊ СЃР»РµРґСѓСЋС‰РёР№ С„СѓРЅРєС†РёРѕРЅР°Р»:
-        //  РћСЃС‚Р°Р»СЊРЅС‹Рµ РїРµСЂРµРѕРїСЂРµРґРµР»СЏРµРјС‹Рµ С„СѓРЅРєС†РёРё, РІРѕР·РІСЂР°С‰Р°СЋС‰РёРµ СЃРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РёР· Р±Р°Р·С‹ РґР°РЅРЅСЉС… РІ СЃРѕРѕС‚РІРµС‚СЃРІРёРё СЃ СѓСЃР»РѕРІРёСЏРјРё: РїРѕ РёРјРµРЅРё, РїРѕ РІРѕР·СЂР°СЃС‚Сѓ Рё РїРѕ РѕС†РµРЅРєРµ
+        // Возвращение всех совершеннолетних пользователей из выборки
+        public bool TryGetAdultUsers(out List<User> outUsers)
+        {
+            // Нахождение пользоваталей совершеннолетних
+            var users = Users.Where(user => user.Age >= 18).ToList();
+            if (users.Any())
+            {
+                Console.WriteLine("Совершеннолетних пользователей в БД нет!");
+                outUsers = new List<User>();
+                return false;
+            }
+            else
+            {
+                Console.WriteLine("Совершеннолетние пользователи в БД есть!");
+                outUsers = users;
+                return true;
+            }
+        }
 
         // Update 
         public void UpdateUser(int id)
@@ -69,14 +112,14 @@ namespace RPO_Entity
             User? user = Users.Find(id);
             if (user != null)
             {
-                Console.Write("Р’РІРµРґРёС‚Рµ РЅРѕРІРѕРµ РёРјСЏ РґР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ: ");
+                Console.Write("Введите новое имя для пользователя: ");
                 user.Name = Console.ReadLine();
-                Console.Write("Р’РІРµРґРёС‚Рµ РЅРѕРІС‹Р№ РІРѕР·СЂР°СЃС‚ РґР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ: ");
+                Console.Write("Введите новый возраст для пользователя: ");
                 user.Age = Convert.ToInt32(Console.ReadLine());
                 
                 SaveChanges();
             }
-            else Console.WriteLine($"РџРѕРґС…РѕРґСЏС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ СЃ id: {id} РЅРµ РЅР°Р№РґРµРЅРѕ");
+            else Console.WriteLine($"Подходящего пользователя с id: {id} не найдено");
         }
 
         // Delete
@@ -88,24 +131,23 @@ namespace RPO_Entity
                 Users.Remove(user);
                 SaveChanges();
             }
-            else Console.WriteLine($"Р—РЅР°С‡РµРЅРёСЏ СЃ id: {id} РЅРµ Р±С‹Р»Рѕ РЅР°Р№РґРµРЅРѕ");
+            else Console.WriteLine($"Значения с id: {id} не было найдено");
         }
 
-        public void DeleteUser(int[] id)
-        {
-            List<User> users = GetUser();
+        public bool TryDeleteUsers(int[] ids)
+        { 
+            // Делаем выборку пользоваталей с совпадающими с передаваемым массивом id
+            List<User> usersToDelete = Users.Where(user => ids.Contains(user.Id)).ToList();
 
-            for (int i = 0; i < Users.Count(); i++)
+            if (usersToDelete.Any()) // Проверяем есть ли какие-либо элементы в коллекции
             {
-                for (int j = 0; j < id.Length; j++)
-                {
-                    if (users[i].Id == id[j])
-                    {
-                        Users.Remove(users[i]);
-                        SaveChanges();
-                    }
-                    else Console.WriteLine($"Р—РЅР°С‡РµРЅРёСЏ СЃ id: {id[j]} РЅРµ Р±С‹Р»Рѕ РЅР°Р№РґРµРЅРѕ");
-                }
+                Users.RemoveRange(usersToDelete);
+                SaveChanges();
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
     }
