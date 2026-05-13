@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.Timers;
@@ -19,9 +20,28 @@ namespace RPO_Entity
         }
 
         public virtual DbSet<User> Users { get; set; }
+        // Объект потока вывода
+        StreamWriter logWriter = new StreamWriter("log.log", false);
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-            => optionsBuilder.UseSqlite("Data Source=rpousers.db");
+        {
+            optionsBuilder.UseSqlite("Data Source=rpousers.db");
+            // Логирование осуществляется с помощью функции LogTo, которая принимает поток вывода. Отсюда следует, что можно вывести информацию в консоль либо в файл.
+            //optionsBuilder.LogTo(Console.WriteLine);
+            optionsBuilder.LogTo(logWriter.WriteLine, Microsoft.Extensions.Logging.LogLevel.Error);
+            // Каждое сообщение в логе закреплено за определенным идентификатором:
+            // CoreEventId - событие для инфраструктуры Entity;
+            // RelationalEventId - событие характерное для реляционной базы данных
+            //optionsBuilder.LogTo(Console.WriteLine, new[] { RelationalEventId.ConnectionCreated });
+            //optionsBuilder.LogTo(Console.WriteLine, new[] { RelationalEventId.CommandExecuted });
+
+            // Существует дополнительно класс DbLoggerCategory, который позволяет удобно фильтровать логгирование по разным категориям:
+            /*optionsBuilder.LogTo(Console.WriteLine, new[] { DbLoggerCategory.Database.Connection.Name });
+            optionsBuilder.LogTo(Console.WriteLine, new[] { DbLoggerCategory.Database.Name });
+            optionsBuilder.LogTo(Console.WriteLine, new[] { DbLoggerCategory.Database.Command.Name });
+            optionsBuilder.LogTo(Console.WriteLine, new[] { DbLoggerCategory.Database.Transaction.Name });*/
+            optionsBuilder.LogTo(Console.WriteLine, new[] { DbLoggerCategory.Query.Name });
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
