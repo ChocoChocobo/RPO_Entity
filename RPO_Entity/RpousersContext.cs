@@ -11,7 +11,7 @@ namespace RPO_Entity
     {
         public RpousersContext()
         {
-            Database.EnsureCreated();
+            //Database.EnsureCreated();
         }
 
         public RpousersContext(DbContextOptions<RpousersContext> options)
@@ -40,7 +40,7 @@ namespace RPO_Entity
             optionsBuilder.LogTo(Console.WriteLine, new[] { DbLoggerCategory.Database.Name });
             optionsBuilder.LogTo(Console.WriteLine, new[] { DbLoggerCategory.Database.Command.Name });
             optionsBuilder.LogTo(Console.WriteLine, new[] { DbLoggerCategory.Database.Transaction.Name });*/
-            optionsBuilder.LogTo(Console.WriteLine, new[] { DbLoggerCategory.Query.Name });
+            //optionsBuilder.LogTo(Console.WriteLine, new[] { DbLoggerCategory.Query.Name });
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
