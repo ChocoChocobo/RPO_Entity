@@ -9,7 +9,7 @@ namespace RPO_Entity
     public static class MessengerCore // ДЗ: Статичный класс зачем он нужен
     {
         // Интервал по времени, который засекается для определения активности пользователя
-        private static TimeSpan Timeout = TimeSpan.FromSeconds(0);
+        private static TimeSpan Timeout = TimeSpan.FromSeconds(6);
 
         // Функция, ответственная за инициализацию БД
         public static async Task Initialize()
@@ -120,17 +120,19 @@ namespace RPO_Entity
                 SenderId = senderId,
                 ReceiverId = receiverId,
                 TextContent = textContent,
-                ConversationKey = $"{senderId}:{receiverId}",
+                ConversationKey = BuildConversationKey(senderId, receiverId),
                 TimeSent = DateTime.Now,
             });
             await db.SaveChangesAsync();
         }
 
+        private static string BuildConversationKey(int idA, int idB) => idA < idB ? $"{idA}:{idB}" : $"{idA}:{idB}";
+
         // Получитб диалог
         public static Task<List<MessageDto>> GetConversationAsync(int userAId, int userBId)
         {
             using var db = new MessengerContext();
-            string key = $"{userAId}:{userBId}";
+            string key = BuildConversationKey(userAId, userBId);
 
             return db.Messages.AsNoTracking()
                                 .Where(m => m.ConversationKey == key)

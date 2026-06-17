@@ -107,6 +107,8 @@ namespace RPO_Entity
                 {
                     Console.WriteLine($"[{message.TimeSent}] Ќовое сообщение от {message.SenderName}: {message.TextContent}");
                 }
+
+                lastSeenId = incomingMessages[^1].Id; // »нициализаци€ индекса последним индексом из списка сообщений
             }
         }
 
