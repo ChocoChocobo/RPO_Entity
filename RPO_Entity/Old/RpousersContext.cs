@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Timers;
 using System.Xml.Linq;
 
-namespace RPO_Entity
+namespace RPO_Entity.Old
 {
     public partial class RpousersContext : DbContext
     {
